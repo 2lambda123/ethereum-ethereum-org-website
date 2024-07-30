@@ -1,41 +1,38 @@
-import { lazy, ReactNode, Suspense, useState } from "react"
+import { Suspense, useState } from "react"
 import type { GetStaticProps, InferGetStaticPropsType } from "next"
 import { useRouter } from "next/router"
 import { useTranslation } from "next-i18next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
-import { FaGithub } from "react-icons/fa"
-import {
-  Box,
-  chakra,
-  Divider,
-  Flex,
-  FlexProps,
-  Heading,
-  HeadingProps,
-  Icon,
-  SimpleGridProps,
-  SkeletonText,
-  Stack,
-  useToken,
-} from "@chakra-ui/react"
+import { FaDiscord, FaGithub } from "react-icons/fa"
+import { MdChevronRight } from "react-icons/md"
+import { RxExternalLink } from "react-icons/rx"
+import { Flex, Skeleton } from "@chakra-ui/react"
 
-import { AllMetricData, BasePageProps, ChildOnlyProp, Lang } from "@/lib/types"
+import { AllMetricData, BasePageProps, Lang } from "@/lib/types"
 import type { CodeExample, CommunityEventsReturnType } from "@/lib/interfaces"
 
-import ActionCard from "@/components/ActionCard"
-import ButtonLink from "@/components/Buttons/ButtonLink"
-import CalloutBanner from "@/components/CalloutBanner"
+import BigNumber from "@/components/BigNumber"
+import SvgButtonLink from "@/components/Buttons/SvgButtonLink"
+import Codeblock from "@/components/Codeblock"
 import CodeModal from "@/components/CodeModal"
-import CommunityEvents from "@/components/CommunityEvents"
 import HomeHero from "@/components/Hero/HomeHero"
-import { Image } from "@/components/Image"
-import LazyLoadComponent from "@/components/LazyLoadComponent"
+import HomeSection from "@/components/HomeSection"
+import AngleBrackets from "@/components/icons/angle-brackets.svg"
+import BlockHeap from "@/components/icons/block-heap.svg"
+import Calendar from "@/components/icons/calendar.svg"
+import EthTokenIcon from "@/components/icons/eth-token.svg"
+import PickWalletIcon from "@/components/icons/eth-wallet.svg"
+import ChooseNetworkIcon from "@/components/icons/network-layers.svg"
+import TryAppsIcon from "@/components/icons/phone-homescreen.svg"
+import RoadmapSign from "@/components/icons/roadmap-sign.svg"
+import Whitepaper from "@/components/icons/whitepaper.svg"
 import MainArticle from "@/components/MainArticle"
 import PageMetadata from "@/components/PageMetadata"
-import TitleCardList from "@/components/TitleCardList"
 import { TranslatathonBanner } from "@/components/Translatathon/TranslatathonBanner"
-import Translation from "@/components/Translation"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import WindowBox from "@/components/WindowBox"
 
+import { cn } from "@/lib/utils/cn"
 import { existsNamespace } from "@/lib/utils/existsNamespace"
 import { getLastDeployDate } from "@/lib/utils/getLastDeployDate"
 import { runOnlyOnce } from "@/lib/utils/runOnlyOnce"
@@ -45,7 +42,11 @@ import {
   isLangRightToLeft,
 } from "@/lib/utils/translations"
 
-import { BASE_TIME_UNIT } from "@/lib/constants"
+import events from "@/data/community-events.json"
+
+import { BASE_TIME_UNIT, GITHUB_REPO_URL } from "@/lib/constants"
+
+import { Button, ButtonLink } from "../../tailwind/ui/buttons/Button"
 
 import CreateWalletContent from "!!raw-loader!@/data/CreateWallet.js"
 import SimpleDomainRegistryContent from "!!raw-loader!@/data/SimpleDomainRegistry.sol"
@@ -56,152 +57,11 @@ import { fetchNodes } from "@/lib/api/fetchNodes"
 import { fetchTotalEthStaked } from "@/lib/api/fetchTotalEthStaked"
 import { fetchTotalValueLocked } from "@/lib/api/fetchTotalValueLocked"
 import { fetchTxCount } from "@/lib/api/fetchTxCount"
-import devfixed from "@/public/images/developers-eth-blocks.png"
-import dogefixed from "@/public/images/doge-computer.png"
-import enterprise from "@/public/images/enterprise-eth.png"
-import ethfixed from "@/public/images/eth.png"
-import finance from "@/public/images/finance_transparent.png"
-import future from "@/public/images/future_transparent.png"
-import hackathon from "@/public/images/hackathon_transparent.png"
+import buildersImage from "@/public/images/heroes/developers-hub-hero.jpg"
+import activityImage from "@/public/images/heroes/layer-2-hub-hero.jpg"
+import learnImage from "@/public/images/heroes/learn-hub-hero.png"
+import communityImage from "@/public/images/heroes/quizzes-hub-hero.png"
 import hero from "@/public/images/home/hero.png"
-import impact from "@/public/images/impact_transparent.png"
-import infrastructure from "@/public/images/infrastructure_transparent.png"
-import infrastructurefixed from "@/public/images/infrastructure_transparent.png"
-import merge from "@/public/images/upgrades/merge.png"
-import robotfixed from "@/public/images/wallet-cropped.png"
-import ethereum from "@/public/images/what-is-ethereum.png"
-
-// lazy loaded components
-const Codeblock = lazy(() =>
-  Promise.all([
-    import("@/components/Codeblock"),
-    // Add a delay to prevent the skeleton from flashing
-    new Promise((resolve) => setTimeout(resolve, 1000)),
-  ]).then(([module]) => module)
-)
-const StatsBoxGrid = lazy(() => import("@/components/StatsBoxGrid"))
-
-const Skeleton = () => (
-  <Stack px={6} pt="2.75rem" h="50vh">
-    <SkeletonText
-      mt="4"
-      noOfLines={6}
-      spacing={4}
-      skeletonHeight="1.4rem"
-      startColor="body.medium"
-      opacity={0.2}
-    />
-  </Stack>
-)
-
-const SectionHeading = (props: HeadingProps) => (
-  <Heading
-    lineHeight={1.4}
-    fontFamily="sans-serif"
-    fontSize={{ base: "2xl", sm: "2rem" }}
-    fontWeight={600}
-    mb={2}
-    {...props}
-  />
-)
-
-const SectionDecription = (props: ChildOnlyProp) => (
-  <Box mb={8} fontSize={{ base: "md", sm: "xl" }} lineHeight={1.4} {...props} />
-)
-
-const ImageContainer = (props: FlexProps & { children: ReactNode }) => (
-  <Flex width={{ base: "75%", lg: "full" }} height="full" {...props} />
-)
-
-const CardContainer = (props: {
-  children: ReactNode
-  minChildWidth: SimpleGridProps["minChildWidth"]
-}) => (
-  <Flex
-    flexWrap="wrap"
-    gap={8}
-    p={{ lg: 4 }}
-    width="full"
-    sx={{
-      "& > *": {
-        minW: props.minChildWidth,
-      },
-    }}
-  >
-    {props.children}
-  </Flex>
-)
-
-const ContentBox = (props: ChildOnlyProp) => (
-  <Box py={4} px={{ base: 4, lg: 8 }} {...props} />
-)
-
-const StyledActionCard = chakra(ActionCard, {
-  baseStyle: {
-    background: "background.base",
-    borderRadius: "sm",
-    border: "1px",
-    borderColor: "text",
-    margin: 0,
-  },
-})
-
-const StyledTitleCardList = chakra(TitleCardList)
-
-const GrayContainer = (props: ChildOnlyProp) => (
-  <Box width="full" pb={16} background="grayBackground" {...props} />
-)
-
-const MainSectionContainer = (props: {
-  children: ReactNode
-  containerBg: FlexProps["bg"]
-}) => (
-  <Flex
-    alignItems="center"
-    background={props.containerBg}
-    borderBlock="1px"
-    borderColor="text"
-    height={{ base: "100%", lg: "720px" }}
-    mt="-1px"
-    py={{ base: 8, lg: 0 }}
-    width="full"
-  >
-    {props.children}
-  </Flex>
-)
-
-const FeatureContent = (props: ChildOnlyProp) => (
-  <Flex
-    flex="0 0 50%"
-    flexDirection="column"
-    justifyContent="center"
-    boxSize="full"
-    maxWidth={{ lg: "75%" }}
-    p={{ base: 8, lg: 24 }}
-    {...props}
-  />
-)
-
-const Row = (props: { children: ReactNode; isReversed?: boolean }) => (
-  <Flex
-    alignItems="center"
-    flexDirection={{
-      base: "column-reverse",
-      lg: props.isReversed ? "row-reverse" : "row",
-    }}
-  >
-    {props.children}
-  </Flex>
-)
-
-const ButtonLinkRow = (props: ChildOnlyProp) => (
-  <Stack
-    alignItems="flex-start"
-    direction={{ base: "column", md: "row" }}
-    spacing={{ base: 6, md: 2 }}
-    {...props}
-  />
-)
 
 const cachedFetchCommunityEvents = runOnlyOnce(fetchCommunityEvents)
 const cachedFetchTotalEthStaked = runOnlyOnce(fetchTotalEthStaked)
@@ -255,71 +115,17 @@ const HomePage = ({
 }: InferGetStaticPropsType<typeof getStaticProps>) => {
   const { t } = useTranslation(["common", "page-index"])
   const { locale, asPath } = useRouter()
+  const dir = isLangRightToLeft(locale as Lang) ? "rtl" : "ltr"
+
   const [isModalOpen, setModalOpen] = useState(false)
   const [activeCode, setActiveCode] = useState(0)
-  const dir = isLangRightToLeft(locale as Lang) ? "rtl" : "ltr"
 
   const toggleCodeExample = (id: number): void => {
     setActiveCode(id)
     setModalOpen(true)
   }
 
-  const cards = [
-    {
-      image: robotfixed,
-      title: t("page-index:page-index-get-started-wallet-title"),
-      description: t("page-index:page-index-get-started-wallet-description"),
-      alt: t("page-index:page-index-get-started-wallet-image-alt"),
-      href: "/wallets/find-wallet/",
-    },
-    {
-      image: ethfixed,
-      title: t("page-index:page-index-get-started-eth-title"),
-      description: t("page-index:page-index-get-started-eth-description"),
-      alt: t("page-index:page-index-get-started-eth-image-alt"),
-      href: "/get-eth/",
-    },
-    {
-      image: dogefixed,
-      title: t("page-index:page-index-get-started-dapps-title"),
-      description: t("page-index:page-index-get-started-dapps-description"),
-      alt: t("page-index:page-index-get-started-dapps-image-alt"),
-      href: "/dapps/",
-    },
-    {
-      image: devfixed,
-      title: t("page-index:page-index-get-started-devs-title"),
-      description: t("page-index:page-index-get-started-devs-description"),
-      alt: t("page-index:page-index-get-started-devs-image-alt"),
-      href: "/developers/",
-    },
-  ]
-
-  const touts = [
-    {
-      image: merge,
-      alt: t("page-index:page-index-tout-upgrades-image-alt"),
-      title: t("page-index:page-index-tout-upgrades-title"),
-      description: t("page-index:page-index-tout-upgrades-description"),
-      href: "/roadmap/",
-    },
-    {
-      image: infrastructurefixed,
-      alt: t("page-index:page-index-tout-enterprise-image-alt"),
-      title: t("page-index:page-index-tout-enterprise-title"),
-      description: t("page-index:page-index-tout-enterprise-description"),
-      href: "/enterprise/",
-    },
-    {
-      image: enterprise,
-      alt: t("page-index:page-index-tout-community-image-alt"),
-      title: t("page-index:page-index-tout-community-title"),
-      description: t("page-index:page-index-tout-community-description"),
-      href: "/community/",
-    },
-  ]
-
-  const codeExamples: Array<CodeExample> = [
+  const codeExamples: CodeExample[] = [
     {
       title: t("page-index:page-index-developers-code-example-title-0"),
       description: t(
@@ -354,7 +160,102 @@ const HomePage = ({
     },
   ]
 
-  const cardBoxShadow = useToken("colors", "cardBoxShadow")
+  // TODO: Remove when used
+  console.log("Values to use:", {
+    communityEvents,
+    metricResults,
+    codeExamples,
+  })
+
+  const SubHeroCTAs = [
+    {
+      label: "Pick a wallet",
+      description: "Create accounts, manage assets",
+      href: "/wallets/find-wallet/",
+      Svg: PickWalletIcon,
+      colorClass: "text-primary",
+    },
+    {
+      label: "Get ETH",
+      description: "The currency of Ethereum",
+      href: "/get-eth/",
+      Svg: EthTokenIcon,
+      colorClass: "text-accent-a",
+    },
+    {
+      label: "Choose a network",
+      description: "Enjoy minimal fees",
+      href: "/layer-2/", // TODO: Update with new networks page when ready
+      Svg: ChooseNetworkIcon,
+      colorClass: "text-accent-b",
+    },
+    {
+      label: "Try apps",
+      description: "See what Ethereum can do",
+      href: "/dapps/",
+      Svg: TryAppsIcon,
+      colorClass: "text-accent-c",
+    },
+  ]
+
+  const popularTopics = [
+    {
+      label: "What is Ethereum?",
+      Svg: EthTokenIcon,
+      href: "/what-is-ethereum/",
+    },
+    {
+      label: "What are crypto wallets?",
+      Svg: PickWalletIcon,
+      href: "/wallets/",
+    },
+    {
+      label: "How to start? (step by step)",
+      Svg: BlockHeap,
+      href: "/guides/",
+    },
+    {
+      label: "Ethereum Whitepaper",
+      Svg: Whitepaper,
+      href: "/whitepaper/",
+    },
+    {
+      label: "Ethereum roadmap",
+      Svg: RoadmapSign,
+      href: "/roadmap/",
+    },
+  ]
+
+  const dummyCalendarData = [
+    {
+      date: "May 29, 2024 at 18:00",
+      title: "ethereum.org Community Call - May 2024",
+    },
+    {
+      date: "Jul 25, 2024",
+      title: "☎️ ethereum.org Community Call - July 2024",
+    },
+    {
+      date: "Jul 3, 2024",
+      title: "🛠 QA session - ethereum.org portal",
+    },
+    {
+      date: "May 8, 2024",
+      title:
+        "👾 Live coding session - Implementing a visual testing component on ethereum.org",
+    },
+  ]
+
+  const comingSoon = [
+    { title: "Ethereum news", tag: "" },
+    { title: "Join ethereum.org", tag: "" },
+  ]
+
+  const upcomingEvents = events
+    .sort(
+      (a, b) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime()
+    )
+    .slice(0, 3)
 
   return (
     <Flex
@@ -369,197 +270,165 @@ const HomePage = ({
         description={t("page-index:page-index-meta-description")}
       />
       <TranslatathonBanner pathname={asPath} />
-      <Box w="full">
+      <div className="w-full">
         <HomeHero heroImg={hero} />
-      </Box>
-      {/* Getting Started Section */}
-      <GrayContainer>
-        <ContentBox>
-          <Flex
-            alignItems="center"
-            flexDirection={{ base: "column-reverse", md: "row" }}
-            mt={{ md: 4 }}
-            mb={{ md: 12 }}
-          >
-            <Box
-              flex="0 0 50%"
-              maxW={{ lg: "75%" }}
-              p={{ sm: 8, lg: 24 }}
-              boxSize="full"
+      </div>
+
+      <div className="space-y-16 px-4 md:px-6 lg:space-y-32">
+        <div className="grid w-full grid-cols-2 gap-x-4 gap-y-8 py-20 lg:grid-cols-4 lg:gap-x-10">
+          {SubHeroCTAs.map(({ label, description, href, colorClass, Svg }) => (
+            <SvgButtonLink
+              key={label}
+              Svg={Svg}
+              href={href}
+              label={label}
+              className={colorClass}
             >
-              <SectionHeading fontFamily="inherit" mb={6}>
-                <Translation id="page-index:page-index-get-started" />
-              </SectionHeading>
-              <SectionDecription>
-                <Translation id="page-index:page-index-get-started-description" />
-              </SectionDecription>
-            </Box>
-            <ImageContainer>
-              <Image
-                src={hackathon}
-                alt={t("page-index:page-index-get-started-image-alt")}
-                width={720}
-                backgroundSize="cover"
-                background="no-repeat 50px"
-              />
-            </ImageContainer>
-          </Flex>
-          <CardContainer minChildWidth={{ lg: "480px" }}>
-            {cards.map((card, idx) => (
-              <StyledActionCard
-                key={idx}
-                boxShadow={cardBoxShadow}
-                m={0}
-                title={card.title}
-                description={card.description}
-                alt={card.alt}
-                href={card.href}
-                image={card.image}
-                imageWidth={320}
-              />
+              {description}
+            </SvgButtonLink>
+          ))}
+        </div>
+
+        <HomeSection tag="Use cases" title="A new way to use the internet">
+          <span className="text-[5rem]">👷‍♀️🚧🔜</span>
+        </HomeSection>
+
+        <HomeSection
+          tag="Activity"
+          title="The strongest ecosystem"
+          imgSrc={activityImage}
+        >
+          <div className="mt-16 xl:mt-32">
+            <p className="mt-8 text-xl font-bold">
+              Activity from all Ethereum networks
+            </p>
+            <div className="grid w-full grid-cols-1 xl:grid-cols-2">
+              {/* TODO: Plug in real data */}
+              <BigNumber
+                className="border-b border-body-light xl:border-e xl:pe-8"
+                value="$44.89B"
+                sourceName="Defi Llama"
+              >
+                Total value held on Ethereum
+              </BigNumber>
+
+              <BigNumber
+                className="border-b border-body-light xl:ps-8"
+                value="8.36M"
+                sourceName="Etherscan"
+                sourceUrl="https://etherscan.io/"
+              >
+                Transactions in the last 24h
+              </BigNumber>
+
+              <BigNumber
+                className="border-b border-body-light xl:border-b-0 xl:border-e xl:pe-8"
+                value="$0.01"
+              >
+                Average transaction cost
+              </BigNumber>
+
+              <BigNumber
+                className="xl:ps-8"
+                value="$115B"
+                sourceName="Dune Analytics"
+                sourceUrl="https://dune.xyz/"
+              >
+                Value protecting Ethereum
+              </BigNumber>
+            </div>
+          </div>
+        </HomeSection>
+
+        <HomeSection
+          tag="Learn"
+          title="Understanding Ethereum"
+          imgSrc={learnImage}
+          isFlipped
+        >
+          <div className="flex flex-col space-y-16 xl:space-y-32">
+            <p className="text-lg">
+              Cryptocurrency can feel overwhelming. Don&apos;t worry, these
+              materials are designed to help you understand Ethereum in just a
+              few minutes.
+            </p>
+            <div className="flex flex-col space-y-8">
+              <p className="text-xl font-bold">Popular topics</p>
+              <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                {popularTopics.map(({ label, Svg, href }) => (
+                  <SvgButtonLink
+                    key={label}
+                    Svg={Svg}
+                    href={href}
+                    className="text-primary [&>:first-child]:flex-row"
+                  >
+                    <p className="text-start text-xl font-bold text-body">
+                      {label}
+                    </p>
+                  </SvgButtonLink>
+                ))}
+              </div>
+              <div className="flex justify-center py-8 lg:justify-start">
+                <ButtonLink
+                  linkProps={{ href: "/learn/" }}
+                  className="w-fit text-lg"
+                >
+                  Other topics <MdChevronRight />
+                </ButtonLink>
+              </div>
+            </div>
+          </div>
+        </HomeSection>
+
+        <HomeSection tag="" title="The internet is changing">
+          <span className="text-[5rem]">👷‍♀️🚧🔜</span>
+        </HomeSection>
+
+        <HomeSection
+          tag="Builders"
+          title="Blockchain's biggest builder community"
+          imgSrc={buildersImage}
+        >
+          <p className="text-lg">
+            Ethereum is home to Web3’s largest and most vibrant developer
+            ecosystem. Use JavaScript and Python, or learn a smart contract
+            language like Solidity or Vyper to write your own app.
+          </p>
+          <div className="flex flex-col justify-center gap-6 py-8 md:flex-row lg:justify-start">
+            <ButtonLink
+              linkProps={{ href: "/developers/" }}
+              className="w-fit text-lg"
+            >
+              Builder&apos;s Portal <MdChevronRight />
+            </ButtonLink>
+            <ButtonLink
+              linkProps={{ href: "/developers/docs/" }}
+              className="w-fit text-lg"
+              variant="outline"
+            >
+              Documentation
+            </ButtonLink>
+          </div>
+          <WindowBox
+            title={t("page-index:page-index-developers-code-examples")}
+            Svg={AngleBrackets}
+          >
+            {codeExamples.map(({ title, description }, idx) => (
+              <button
+                key={title}
+                className="flex flex-col space-y-0.5 border-t px-6 py-4 hover:bg-black/5"
+                onClick={() => toggleCodeExample(idx)}
+              >
+                <p className="font-bold">{title}</p>
+                <p className="text-start text-sm text-body-medium">
+                  {description}
+                </p>
+              </button>
             ))}
-          </CardContainer>
-        </ContentBox>
-      </GrayContainer>
-      {/* What is Eth Section */}
-      <MainSectionContainer containerBg="homeBoxTurquoise">
-        <Row isReversed>
-          <FeatureContent>
-            <SectionHeading>
-              <Translation id="page-index:page-index-what-is-ethereum" />
-            </SectionHeading>
-            <SectionDecription>
-              <Translation id="page-index:page-index-what-is-ethereum-description" />
-            </SectionDecription>
-            <ButtonLinkRow>
-              <ButtonLink href="/what-is-ethereum/">
-                <Translation id="page-index:page-index-what-is-ethereum-button" />
-              </ButtonLink>
-              <ButtonLink href="/eth/" variant="outline" isSecondary>
-                <Translation id="page-index:page-index-what-is-ethereum-secondary-button" />
-              </ButtonLink>
-            </ButtonLinkRow>
-          </FeatureContent>
-          <ImageContainer ps={{ lg: 8 }}>
-            <Image
-              src={ethereum}
-              alt={t("page-index:page-index-what-is-ethereum-image-alt")}
-              width={700}
-            />
-          </ImageContainer>
-        </Row>
-      </MainSectionContainer>
-      {/* Finance Section */}
-      <MainSectionContainer containerBg="homeBoxOrange">
-        <Row>
-          <FeatureContent>
-            <SectionHeading>
-              <Translation id="page-index:page-index-defi" />
-            </SectionHeading>
-            <SectionDecription>
-              <Translation id="page-index:page-index-defi-description" />
-            </SectionDecription>
-            <ButtonLinkRow>
-              <ButtonLink href="/defi/">
-                <Translation id="page-index:page-index-defi-button" />
-              </ButtonLink>
-            </ButtonLinkRow>
-          </FeatureContent>
-          <ImageContainer>
-            <Image
-              src={impact}
-              alt={t("page-index:page-index-defi-image-alt")}
-              width={700}
-            />
-          </ImageContainer>
-        </Row>
-      </MainSectionContainer>
-      {/* NFT Section */}
-      <MainSectionContainer containerBg="homeBoxMint">
-        <Row isReversed>
-          <FeatureContent>
-            <SectionHeading>
-              <Translation id="page-index:page-index-nft" />
-            </SectionHeading>
-            <SectionDecription>
-              <Translation id="page-index:page-index-nft-description" />
-            </SectionDecription>
-            <ButtonLinkRow>
-              <ButtonLink href="/nft/">
-                <Translation id="page-index:page-index-nft-button" />
-              </ButtonLink>
-            </ButtonLinkRow>
-          </FeatureContent>
-          <ImageContainer>
-            <Image
-              src={infrastructure}
-              alt={t("page-index:page-index-nft-alt")}
-              width={700}
-            />
-          </ImageContainer>
-        </Row>
-      </MainSectionContainer>
-      {/* Internet Section */}
-      <MainSectionContainer containerBg="homeBoxPink">
-        <Box ps={{ lg: 8 }}>
-          <Row>
-            <FeatureContent>
-              <SectionHeading>
-                <Translation id="page-index:page-index-internet" />
-              </SectionHeading>
-              <SectionDecription>
-                <Translation id="page-index:page-index-internet-description" />
-              </SectionDecription>
-              <ButtonLinkRow>
-                <ButtonLink href="/dapps/?category=technology">
-                  <Translation id="page-index:page-index-internet-button" />
-                </ButtonLink>
-                <ButtonLink href="/wallets/" variant="outline" isSecondary>
-                  <Translation id="page-index:page-index-internet-secondary-button" />
-                </ButtonLink>
-              </ButtonLinkRow>
-            </FeatureContent>
-            <ImageContainer>
-              <Image
-                src={future}
-                alt={t("page-index:page-index-internet-image-alt")}
-                width={700}
-              />
-            </ImageContainer>
-          </Row>
-        </Box>
-      </MainSectionContainer>
-      {/* Developer Section */}
-      <MainSectionContainer containerBg="homeBoxPurple">
-        <Row>
-          <Box py={4} px={{ base: 4, sm: 8 }} width="full">
-            <StyledTitleCardList
-              content={codeExamples}
-              clickHandler={toggleCodeExample}
-              headerKey="page-index:page-index-developers-code-examples"
-              isCode
-              border="1px"
-              borderColor="text"
-              boxShadow={cardBoxShadow}
-              maxWidth={{ lg: "624px" }}
-              ms={{ lg: 16 }}
-            />
-          </Box>
-          <FeatureContent>
-            <SectionHeading>
-              <Translation id="page-index:page-index-developers" />
-            </SectionHeading>
-            <SectionDecription>
-              <Translation id="page-index:page-index-developers-description" />
-            </SectionDecription>
-            <ButtonLinkRow>
-              <ButtonLink href="/developers/">
-                <Translation id="page-index:page-index-developers-button" />
-              </ButtonLink>
-            </ButtonLinkRow>
-          </FeatureContent>
-          {/* Render CodeModal & Codeblock conditionally */}
+          </WindowBox>
+
           {isModalOpen && (
+            // TODO: Migrate CodeModal, CodeBlock, Skeleton from Chakra-UI to tailwind/shad-cn
             <CodeModal
               isOpen={isModalOpen}
               setIsOpen={setModalOpen}
@@ -576,82 +445,160 @@ const HomePage = ({
               </Suspense>
             </CodeModal>
           )}
-        </Row>
-      </MainSectionContainer>
-      {/* Eth Today Section */}
-      <GrayContainer>
-        <ContentBox>
-          <SectionHeading mt={12} mb={8} fontFamily="heading">
-            <Translation id="page-index:page-index-network-stats-title" />
-          </SectionHeading>
-          <SectionDecription>
-            <Translation id="page-index:page-index-network-stats-subtitle" />
-          </SectionDecription>
-        </ContentBox>
+        </HomeSection>
 
-        <LazyLoadComponent
-          component={StatsBoxGrid}
-          fallback={<Skeleton />}
-          componentProps={{ data: metricResults }}
-          intersectionOptions={{
-            root: null,
-            rootMargin: "500px",
-            threshold: 0,
-          }}
-        />
-      </GrayContainer>
-      <Divider mb={16} mt={16} w="10%" height="0.25rem" bgColor="homeDivider" />
-      <CommunityEvents events={communityEvents} />
-      {/* Explore Section */}
-      <ContentBox>
-        <Box pb={4}>
-          <SectionHeading mt={12} mb={8} fontFamily="heading">
-            <Translation id="page-index:page-index-touts-header" />
-          </SectionHeading>
-        </Box>
-        <CardContainer minChildWidth={{ lg: "400px" }}>
-          {touts.map((tout, idx) => {
-            return (
-              <StyledActionCard
-                key={idx}
-                title={tout.title}
-                description={tout.description}
-                alt={tout.alt}
-                href={tout.href}
-                image={tout.image}
-                imageWidth={320}
-                boxShadow={cardBoxShadow}
-              />
-            )
-          })}
-        </CardContainer>
-        <CalloutBanner
-          titleKey={"page-index:page-index-contribution-banner-title"}
-          descriptionKey={
-            "page-index:page-index-contribution-banner-description"
-          }
-          image={finance}
-          imageWidth={600}
-          alt={t("page-index:page-index-contribution-banner-image-alt")}
-          mt={32}
-          mb={16}
-          mx={0}
+        <HomeSection
+          tag="Ethereum.org Community"
+          title="Built by the community"
+          imgSrc={communityImage}
+          isFlipped
         >
-          <ButtonLinkRow>
-            <ButtonLink href="/contributing/">
-              <Translation id="page-index:page-index-contribution-banner-button" />
+          <div className="mt-8 flex flex-col gap-8">
+            <p className="text-lg">
+              The ethereum.org website is built and maintained by hundreds of
+              translators, coders, designers, copywriters, and enthusiastic
+              community members each month.
+            </p>
+            <p className="text-lg">
+              Come ask questions, connect with people around the world and
+              contribute to the website. You will get relevant practical
+              experience and be guided during the process!
+            </p>
+            <p className="text-lg">
+              Ethereum.org community is the perfect place to start and learn.
+            </p>
+          </div>
+          <div className="BUTTON_GROUP flex flex-wrap gap-3 py-8">
+            <ButtonLink
+              linkProps={{ href: "/discord/", hideArrow: true }}
+              className="w-fit text-lg"
+              variant="outline"
+            >
+              <FaDiscord />
             </ButtonLink>
             <ButtonLink
-              href="https://github.com/ethereum/ethereum-org-website"
-              leftIcon={<Icon as={FaGithub} fontSize="2xl" />}
+              linkProps={{ href: GITHUB_REPO_URL, hideArrow: true }}
+              className="w-fit text-lg"
               variant="outline"
-              isSecondary
             >
-              GitHub
+              <FaGithub />
             </ButtonLink>
-          </ButtonLinkRow>
-        </CalloutBanner>
-      </ContentBox>
+            <ButtonLink
+              linkProps={{ href: "/community/" }}
+              className="w-fit text-lg"
+            >
+              More on ethereum.org <MdChevronRight />
+            </ButtonLink>
+          </div>
+
+          <WindowBox title="Next calls" Svg={Calendar}>
+            {dummyCalendarData.map(({ date, title }, idx) => (
+              <div
+                key={title}
+                className={cn(
+                  "flex flex-col justify-between gap-6 border-t px-6 py-4 xl:flex-row",
+                  idx === 0 && "bg-accent-gradient"
+                )}
+              >
+                <div
+                  className={cn(
+                    "flex flex-col space-y-0.5 text-center text-base sm:text-start"
+                  )}
+                >
+                  <p className="italic text-body-medium">{date}</p>
+                  <p
+                    className={cn(
+                      "text-sm text-body",
+                      idx === 0 && "font-bold"
+                    )}
+                  >
+                    {title}
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-fit w-full text-nowrap border-body !text-body sm:w-fit xl:self-center"
+                >
+                  Add to calendar <RxExternalLink />
+                </Button>
+              </div>
+            ))}
+          </WindowBox>
+
+          {/* TODO: News sub-section */}
+        </HomeSection>
+
+        <HomeSection tag="" title="Ethereum events">
+          <p>We have many community events scheduled around the globe</p>
+          <div className="mt-4 lg:mt-16">
+            <div className="flex flex-col gap-8 self-stretch md:flex-row">
+              {upcomingEvents.map(
+                ({
+                  title,
+                  href,
+                  location,
+                  description,
+                  startDate,
+                  endDate,
+                  imageUrl,
+                }) => {
+                  return (
+                    <a
+                      href={href}
+                      className="md:w-1/3 md:max-w-128"
+                      key={title}
+                    >
+                      <Card
+                        className={cn(
+                          "w-full space-y-4",
+                          "border-none shadow-none",
+                          "transition-transform duration-100 hover:scale-105 hover:transition-transform hover:duration-100"
+                        )}
+                      >
+                        <CardHeader className="bgBACKUP-bg-main-gradient h-48 w-full self-stretch overflow-hidden rounded-2xl bg-bg-main-gradient p-0">
+                          {imageUrl && (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={imageUrl}
+                              alt=""
+                              className="object-cover object-center"
+                            />
+                          )}
+                          {/* TODO: Handle event image */}
+                        </CardHeader>
+                        <CardContent className="space-y-8 p-2">
+                          <div>
+                            <p className="text-2xl">{title}</p>
+                            <p className="text-sm italic text-body-medium">
+                              {new Intl.DateTimeFormat(locale, {
+                                month: "2-digit",
+                                day: "2-digit",
+                                year: "numeric",
+                              }).formatRange(
+                                new Date(startDate),
+                                new Date(endDate)
+                              )}
+                            </p>
+                            <p className="text-sm italic text-body-medium">
+                              {location}
+                            </p>
+                          </div>
+                          <p>{description}</p>
+                        </CardContent>
+                      </Card>
+                    </a>
+                  )
+                }
+              )}
+            </div>
+          </div>
+        </HomeSection>
+        {/* Temporary coming soon section template */}
+        {comingSoon.map((item) => (
+          <HomeSection {...item} key={item.title} />
+        ))}
+      </div>
     </Flex>
   )
 }

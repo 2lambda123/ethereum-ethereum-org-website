@@ -16,6 +16,7 @@ const config = {
         monospace: "var(--font-mono)",
       },
       fontSize: {
+        "7xl": ["4rem", "1.1"], // [7xl, 6xs]
         "6xl": ["3.75rem", "1.2"], // [6xl, 4xs]
         "5xl": ["3rem", "1.2"], // [5xl, 4xs]
         "4xl": ["2.25rem", "1.2"], // [4xl, 4xs]
@@ -47,6 +48,11 @@ const config = {
           light: "var(--primary-light)",
           dark: "var(--primary-dark)",
           pressed: "var(--primary-pressed)",
+        },
+        accent: {
+          a: "var(--accent-a)",
+          b: "var(--accent-b)",
+          c: "var(--accent-c)",
         },
         body: {
           DEFAULT: "var(--body)",
@@ -83,6 +89,8 @@ const config = {
       },
       backgroundImage: {
         "bg-main-gradient": "var(--bg-main-gradient)",
+        "primary-highlight-gradient": "var(--primary-highlight-gradient)",
+        "accent-gradient": "var(--accept-gradient)",
       },
       boxShadow: {
         "table-box": "var(--table-box-shadow)",
@@ -107,6 +115,7 @@ const config = {
         10.5: "2.625rem",
         19: "4.75rem", // Nav height
         31: "7.75rem", // FeedbackWidget conditional bottom offset
+        128: "32rem",
       },
       keyframes: {
         "accordion-down": {
@@ -121,6 +130,10 @@ const config = {
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+      },
+      // Add custom border-radius tailwinds extension for "4xl" as "2rem"
+      borderRadius: {
+        "4xl": "2rem" /* 32px */,
       },
     },
   },
