@@ -1,24 +1,14 @@
 import React from "react"
-import { Box, Flex, Grid, useToken } from "@chakra-ui/react"
 
 import { ChildOnlyProp } from "@/lib/types"
 
+import { Flex } from "@/components/ui/flex"
+
+import { cn } from "@/lib/utils/cn"
+
 export const Banner = ({ children }: ChildOnlyProp) => {
   return (
-    <Flex
-      w="full"
-      background="bannerGridGradient"
-      direction={{ base: "column", lg: "row" }}
-      wrap="nowrap"
-      sx={{
-        h2: {
-          mt: 0,
-        },
-        ul: {
-          mb: 0,
-        },
-      }}
-    >
+    <Flex className="flex-col flex-nowrap bg-banner-grid-gradient lg:flex-row [&_h2]:mt-0 [&_ul]:mb-0">
       {children}
     </Flex>
   )
@@ -26,15 +16,13 @@ export const Banner = ({ children }: ChildOnlyProp) => {
 
 export const BannerBody = ({ children }: ChildOnlyProp) => {
   return (
-    <Box flex={4} p={10}>
-      {children}
-    </Box>
+    <div className="flex-shrink-[1] flex-grow-[4] basis-0 p-10">{children}</div>
   )
 }
 
-export const BannerImage = ({ children }: ChildOnlyProp) => {
+export const BannerImage = ({ children }) => {
   return (
-    <Flex justifyContent="end" flex={2} alignSelf="end">
+    <Flex className="flex-shrink-[1] flex-grow-[2] basis-0 justify-end self-end">
       {children}
     </Flex>
   )
@@ -42,76 +30,28 @@ export const BannerImage = ({ children }: ChildOnlyProp) => {
 
 export const BannerGrid = ({ children }: ChildOnlyProp) => {
   return (
-    <Grid
-      templateColumns={{
-        base: "repeat(1,1fr)",
-        md: "repeat(2,1fr)",
-        lg: "repeat(3,1fr)",
-      }}
-      templateRows={{
-        md: "repeat(3, 1fr)",
-        lg: "repeat(2, 1fr)",
-      }}
-      columnGap={0}
-      rowGap={0}
-    >
+    <div className="grid grid-cols-1 gap-0 md:grid-cols-2 md:grid-rows-3 lg:grid-cols-3 lg:grid-rows-2">
       {children}
-    </Grid>
+    </div>
   )
 }
 
 export const BannerGridCell = ({ children }: ChildOnlyProp) => {
-  const [medBp, lgBp] = useToken("breakpoints", ["md", "lg"])
-
   return (
     <Flex
-      px={{ base: 0, md: 12 }}
-      py={8}
-      direction="column"
-      borderTop="1px solid"
-      borderTopColor="searchBackground"
-      borderInlineStart={{ base: 0, md: "1px solid" }}
-      borderInlineStartColor={{ md: "searchBackground" }}
-      sx={{
-        "&:first-child": {
-          borderTop: 0,
-        },
-        [`@media (min-width: ${medBp})`]: {
-          "&:nth-child(-n + 2)": {
-            borderTop: 0,
-          },
-          "&:nth-child(2n + 1)": {
-            borderInlineStart: 0,
-          },
-        },
-        [`@media (min-width: ${lgBp})`]: {
-          "&:first-child": {
-            ps: 0,
-            borderInlineStart: 0,
-          },
-          "&:nth-child(-n + 2)": {
-            borderTop: "1px solid",
-            borderTopColor: "searchBackground",
-          },
-          "&:nth-child(2n + 1)": {
-            borderInlineStart: "1px solid",
-            borderInlineStartColor: "searchBackground",
-          },
-          "&:nth-child(-n + 3)": {
-            borderTop: 0,
-            justifyContent: "start",
-            paddingTop: 0,
-          },
-          "&:nth-child(3n + 1)": {
-            ps: 0,
-            borderInlineStart: 0,
-          },
-          "&:nth-child(n + 4)": {
-            justifyContent: "start",
-            paddingBottom: 0,
-          },
-        },
-      }}
+      className={cn(
+        "px-0 py-8 md:px-12",
+        "flex-col",
+        "border-t border-t-search-background",
+        "md:border-l md:border-l-search-background",
+        "first:border-t-0",
+        "lg:[&:first-child]:border-l-0",
+        "md:[&:nth-child(-n+2)]:border-t-0 lg:[&:nth-child(-n+2)]:border-t lg:[&:nth-child(-n+2)]:border-t-search-background",
+        "md:[&:nth-child(2n+1)]:border-l-0 lg:[&:nth-child(2n+1)]:border-l lg:[&:nth-child(2n+1)]:border-l-search-background",
+        "lg:[&:nth-child(-n+3)]:justify-start lg:[&:nth-child(-n+3)]:border-t-0 lg:[&:nth-child(-n+3)]:pt-0",
+        "lg:[&:nth-child(3n+1)]:border-l-0 lg:[&:nth-child(3n+1)]:ps-0",
+        "lg:[&:nth-child(n+4)]:justify-start lg:[&:nth-child(n+4)]:pb-0"
+      )}
     >
       {children}
     </Flex>
