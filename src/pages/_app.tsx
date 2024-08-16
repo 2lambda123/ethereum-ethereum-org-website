@@ -28,17 +28,15 @@ const App = ({ Component, pageProps }: AppPropsWithLayout) => {
   const getLayout = Component.getLayout ?? ((page) => page)
 
   return (
-    <>
-      <ThemeProvider>
-        <BaseLayout
-          contentIsOutdated={!!pageProps.frontmatter?.isOutdated}
-          contentNotTranslated={pageProps.contentNotTranslated}
-          lastDeployLocaleTimestamp={pageProps.lastDeployLocaleTimestamp}
-        >
-          {getLayout(<Component {...pageProps} />)}
-        </BaseLayout>
-      </ThemeProvider>
-    </>
+    <ThemeProvider>
+      <BaseLayout
+        contentIsOutdated={!!pageProps.frontmatter?.isOutdated}
+        contentNotTranslated={pageProps.contentNotTranslated}
+        lastDeployLocaleTimestamp={pageProps.lastDeployLocaleTimestamp}
+      >
+        {getLayout(<Component {...pageProps} />)}
+      </BaseLayout>
+    </ThemeProvider>
   )
 }
 

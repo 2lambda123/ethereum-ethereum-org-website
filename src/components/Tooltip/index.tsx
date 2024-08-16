@@ -1,18 +1,10 @@
-import React, { ReactNode, useEffect } from "react"
-import {
-  Popover,
-  PopoverArrow,
-  PopoverBody,
-  PopoverContent,
-  PopoverProps,
-  PopoverTrigger,
-  Portal,
-  useDisclosure,
-} from "@chakra-ui/react"
+import React, { ComponentProps, ReactNode, useEffect } from "react"
 
-import { isMobile } from "@/lib/utils/isMobile"
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover"
 
-export interface TooltipProps extends PopoverProps {
+import { useDisclosure } from "@/hooks/useDisclosure"
+
+export type TooltipProps = ComponentProps<typeof Popover> & {
   content: ReactNode
   children?: ReactNode
   onBeforeOpen?: () => void
@@ -22,7 +14,7 @@ const Tooltip = ({
   content,
   children,
   onBeforeOpen,
-  ...rest
+  ...props
 }: TooltipProps) => {
   const { isOpen, onOpen, onClose } = useDisclosure()
 
@@ -57,23 +49,31 @@ const Tooltip = ({
     onOpen()
   }
 
+  const handleOpenChange = (open: boolean) => {
+    if (open) {
+      handleOpen()
+    } else {
+      onClose()
+    }
+  }
+
   return (
-    <Popover
-      isOpen={isOpen}
-      onOpen={handleOpen}
-      onClose={onClose}
-      placement="top"
-      trigger={isMobile() ? "click" : "hover"}
-      gutter={8}
-      {...rest}
-    >
-      <PopoverTrigger>{children}</PopoverTrigger>
-      <Portal>
-        <PopoverContent data-testid="tooltip-popover">
-          <PopoverArrow />
-          <PopoverBody>{content}</PopoverBody>
-        </PopoverContent>
-      </Portal>
+    <Popover open={isOpen} onOpenChange={handleOpenChange} {...props}>
+      <PopoverTrigger
+        onMouseEnter={onOpen}
+        onMouseLeave={onClose}
+        className="focus-visible:rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-hover"
+      >
+        {children}
+      </PopoverTrigger>
+      <PopoverContent
+        side="top"
+        sideOffset={2}
+        className="w-80 px-5 text-sm"
+        data-testid="tooltip-popover"
+      >
+        {content}
+      </PopoverContent>
     </Popover>
   )
 }
